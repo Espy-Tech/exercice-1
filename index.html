@@ -72,13 +72,13 @@
       <form action="/" method="post">
         <div class="form-grid">
           <label class="field">ФИО
-            <input name="fullname" type="text" autocomplete="name" pattern="[\p{L}\p{M}][\p{L}\p{M}\s'\u2019\-]*" title="Используйте буквы, пробелы, дефис и апостроф." required>
+            <input name="fullname" type="text" autocomplete="name" maxlength="100" pattern="[\p{L}\p{M}][\p{L}\p{M}\s'\u2019\-]*" title="Используйте буквы, пробелы, дефис и апостроф." required>
           </label>
           <label class="field">Телефон
-            <input name="phone" type="tel" autocomplete="tel" placeholder="+7 900 000-00-00">
+            <input name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" pattern="\+?[0-9][0-9().\s-]{0,19}" placeholder="+7 900 000-00-00" title="Используйте от 7 до 15 цифр; допустимы +, пробелы, скобки, дефисы и точки.">
           </label>
           <label class="field">E-mail
-            <input name="email" type="email" autocomplete="email" required>
+            <input name="email" type="email" autocomplete="email" maxlength="254" required>
           </label>
           <label class="field">Дата рождения
             <input name="birthdate" type="date">
@@ -97,7 +97,7 @@
             </select>
           </label>
           <label class="field field-wide">Биография
-            <textarea name="biography" rows="5"></textarea>
+            <textarea name="biography" rows="5" maxlength="2000"></textarea>
           </label>
           <label class="field-wide"><input type="checkbox" name="contract" value="accepted" required> С контрактом ознакомлен(а)</label>
           <div class="field-wide"><button type="submit">Сохранить</button></div>
@@ -118,6 +118,39 @@
             field.setSelectionRange(cleanBeforeCursor.length, cleanBeforeCursor.length);
           }
         });
+      });
+
+      document.querySelectorAll('input[name="phone"]').forEach(function (field) {
+        function cleanPhone(value) {
+          var keepLeadingPlus = value.charAt(0) === '+';
+          var cleaned = value.replace(/[^0-9().\s-]/g, '');
+          return (keepLeadingPlus ? '+' : '') + cleaned.slice(0, keepLeadingPlus ? 19 : 20);
+        }
+
+        function validatePhone() {
+          var value = field.value.trim();
+          var digits = value.replace(/[^0-9]/g, '');
+          var valid = !value || (/^\+?[0-9][0-9().\s-]*$/.test(value) && digits.length >= 7 && digits.length <= 15);
+          field.setCustomValidity(valid ? '' : 'Введите телефон без букв и от 7 до 15 цифр.');
+          if (valid) {
+            field.removeAttribute('aria-invalid');
+          } else {
+            field.setAttribute('aria-invalid', 'true');
+          }
+        }
+
+        field.addEventListener('input', function () {
+          var original = field.value;
+          var position = field.selectionStart;
+          var cleaned = cleanPhone(original);
+          if (cleaned !== original) {
+            field.value = cleaned;
+            field.setSelectionRange(cleanPhone(original.slice(0, position)).length, cleanPhone(original.slice(0, position)).length);
+          }
+          validatePhone();
+        });
+        field.addEventListener('blur', validatePhone);
+        validatePhone();
       });
     });
   </script>
